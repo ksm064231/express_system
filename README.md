@@ -302,77 +302,91 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 ## API接口文档
 
+系统共包含 **36 个 REST API 接口**，覆盖 7 大功能模块。所有接口以 `/api` 为统一前缀。
+
 ### 用户管理 (`/api/users`)
 
-| 方法 | 路径 | 说明 | 角色 |
-|------|------|------|------|
-| POST | `/api/users/login` | 用户登录 | 无需认证 |
-| GET | `/api/users` | 获取所有用户 | ADMIN |
-| GET | `/api/users/{id}` | 根据ID获取用户 | ADMIN |
-| POST | `/api/users` | 创建用户 | ADMIN |
-| PUT | `/api/users/{id}` | 更新用户信息 | ADMIN |
-| DELETE | `/api/users/{id}` | 删除用户 | ADMIN |
+| 方法 | 路径 | 说明 | 权限 | 请求体/参数 |
+|------|------|------|------|------------|
+| POST | `/api/users/login` | 用户登录 | 公开 | `LoginDTO`（用户名+密码） |
+| GET | `/api/users` | 获取所有用户 | ADMIN | - |
+| GET | `/api/users/{id}` | 根据ID获取用户 | ADMIN | `id`（路径参数） |
+| POST | `/api/users` | 创建用户 | ADMIN | `User`（JSON） |
+| PUT | `/api/users/{id}` | 更新用户信息 | ADMIN | `id`（路径参数）+ `User`（JSON） |
+| DELETE | `/api/users/{id}` | 删除用户 | ADMIN | `id`（路径参数） |
 
 ### 快递管理 (`/api/packages`)
 
-| 方法 | 路径 | 说明 | 角色 |
-|------|------|------|------|
-| POST | `/api/packages` | 快递入库登记 | COURIER, ADMIN |
-| GET | `/api/packages` | 获取所有快递列表 | COURIER, ADMIN |
-| GET | `/api/packages/{id}` | 根据ID查询快递 | COURIER, ADMIN, OWNER |
-| GET | `/api/packages/tracking/{trackingNumber}` | 根据运单号查询 | COURIER, ADMIN, OWNER |
-| GET | `/api/packages/phone/{phone}` | 根据收件人电话查询 | COURIER, ADMIN |
-| GET | `/api/packages/name/{name}` | 根据收件人姓名查询 | COURIER, ADMIN |
-| GET | `/api/packages/room/{roomNumber}` | 根据房号查询 | COURIER, ADMIN |
-| GET | `/api/packages/status/{status}` | 根据状态查询 | COURIER, ADMIN |
-| GET | `/api/packages/search?keyword=` | 模糊搜索 | COURIER, ADMIN |
-| GET | `/api/packages/overdue?days=3` | 查询逾期未取快递 | COURIER, ADMIN |
-| PUT | `/api/packages/{id}` | 更新快递信息 | COURIER, ADMIN |
-| DELETE | `/api/packages/{id}` | 删除快递 | ADMIN |
+| 方法 | 路径 | 说明 | 权限 | 请求体/参数 |
+|------|------|------|------|------------|
+| POST | `/api/packages` | 快递入库登记 | COURIER / ADMIN | `PackageDTO`（JSON） |
+| GET | `/api/packages` | 获取所有快递列表 | COURIER / ADMIN | - |
+| GET | `/api/packages/{id}` | 根据ID查询快递 | COURIER / ADMIN / OWNER | `id`（路径参数） |
+| GET | `/api/packages/tracking/{trackingNumber}` | 根据运单号查询 | COURIER / ADMIN / OWNER | `trackingNumber`（路径参数） |
+| GET | `/api/packages/phone/{phone}` | 根据收件人电话查询 | COURIER / ADMIN | `phone`（路径参数） |
+| GET | `/api/packages/name/{name}` | 根据收件人姓名查询 | COURIER / ADMIN | `name`（路径参数） |
+| GET | `/api/packages/room/{roomNumber}` | 根据房号查询 | COURIER / ADMIN | `roomNumber`（路径参数） |
+| GET | `/api/packages/status/{status}` | 根据状态查询 | COURIER / ADMIN | `status`（路径参数） |
+| GET | `/api/packages/search` | 搜索快递（模糊搜索） | COURIER / ADMIN | `keyword`（请求参数） |
+| GET | `/api/packages/overdue` | 查询逾期未取快递 | COURIER / ADMIN | `days`（请求参数，默认3天） |
+| PUT | `/api/packages/{id}` | 更新快递信息 | COURIER / ADMIN | `id`（路径参数）+ `PackageDTO`（JSON） |
+| DELETE | `/api/packages/{id}` | 删除快递 | ADMIN | `id`（路径参数） |
 
 ### 取件管理 (`/api/pickups`)
 
-| 方法 | 路径 | 说明 | 角色 |
-|------|------|------|------|
-| POST | `/api/pickups` | 取件操作 | COURIER, ADMIN |
-| POST | `/api/pickups/by-code?trackingNumber=&pickupCode=` | 根据取件码取件 | COURIER, ADMIN |
-| GET | `/api/pickups` | 获取所有取件记录 | COURIER, ADMIN |
-| GET | `/api/pickups/package/{packageId}` | 获取快递的取件记录 | COURIER, ADMIN |
-| GET | `/api/pickups/check/{packageId}` | 检查快递是否已被取件 | COURIER, ADMIN, OWNER |
+| 方法 | 路径 | 说明 | 权限 | 请求体/参数 |
+|------|------|------|------|------------|
+| POST | `/api/pickups` | 取件操作 | COURIER / ADMIN | `PickupDTO`（JSON） |
+| POST | `/api/pickups/by-code` | 根据取件码取件 | COURIER / ADMIN | `trackingNumber` + `pickupCode`（请求参数）+ `PickupDTO`（JSON） |
+| GET | `/api/pickups` | 获取所有取件记录 | COURIER / ADMIN | - |
+| GET | `/api/pickups/package/{packageId}` | 获取快递的取件记录 | COURIER / ADMIN | `packageId`（路径参数） |
+| GET | `/api/pickups/check/{packageId}` | 检查快递是否已被取件 | COURIER / ADMIN / OWNER | `packageId`（路径参数） |
 
 ### 退件管理 (`/api/returns`)
 
-| 方法 | 路径 | 说明 | 角色 |
-|------|------|------|------|
-| POST | `/api/returns` | 退件处理 | COURIER, ADMIN |
-| GET | `/api/returns` | 获取所有退件记录 | COURIER, ADMIN |
-| GET | `/api/returns/package/{packageId}` | 获取快递的退件记录 | COURIER, ADMIN |
+| 方法 | 路径 | 说明 | 权限 | 请求体/参数 |
+|------|------|------|------|------------|
+| POST | `/api/returns` | 退件处理 | COURIER / ADMIN | `ReturnDTO`（JSON） |
+| GET | `/api/returns` | 获取所有退件记录 | COURIER / ADMIN | - |
+| GET | `/api/returns/package/{packageId}` | 获取快递的退件记录 | COURIER / ADMIN | `packageId`（路径参数） |
 
 ### 异常管理 (`/api/exceptions`)
 
-| 方法 | 路径 | 说明 | 角色 |
-|------|------|------|------|
-| POST | `/api/exceptions` | 创建异常记录 | COURIER, ADMIN |
-| GET | `/api/exceptions` | 获取所有异常记录 | COURIER, ADMIN |
-| GET | `/api/exceptions/package/{packageId}` | 获取快递的异常记录 | COURIER, ADMIN |
-| GET | `/api/exceptions/status/{status}` | 根据状态获取异常记录 | COURIER, ADMIN |
-| PUT | `/api/exceptions/{id}/handle` | 处理异常 | COURIER, ADMIN |
-| PUT | `/api/exceptions/{id}/close` | 关闭异常记录 | ADMIN |
+| 方法 | 路径 | 说明 | 权限 | 请求体/参数 |
+|------|------|------|------|------------|
+| POST | `/api/exceptions` | 创建异常记录（错件/丢件等） | COURIER / ADMIN | `ExceptionDTO`（JSON） |
+| GET | `/api/exceptions` | 获取所有异常记录 | COURIER / ADMIN | - |
+| GET | `/api/exceptions/package/{packageId}` | 获取快递的异常记录 | COURIER / ADMIN | `packageId`（路径参数） |
+| GET | `/api/exceptions/status/{status}` | 根据状态获取异常记录 | COURIER / ADMIN | `status`（路径参数） |
+| PUT | `/api/exceptions/{id}/handle` | 处理异常 | COURIER / ADMIN | `id`（路径参数）+ `ExceptionDTO`（JSON） |
+| PUT | `/api/exceptions/{id}/close` | 关闭异常记录 | ADMIN | `id`（路径参数） |
 
 ### 统计报表 (`/api/statistics`)
 
-| 方法 | 路径 | 说明 | 角色 |
-|------|------|------|------|
-| GET | `/api/statistics/daily?date=2026-05-15` | 获取每日统计报表 | COURIER, ADMIN |
+| 方法 | 路径 | 说明 | 权限 | 请求体/参数 |
+|------|------|------|------|------------|
+| GET | `/api/statistics/daily` | 获取每日统计报表 | COURIER / ADMIN | `date`（请求参数，可选，默认当天） |
 
 ### 逾期提醒 (`/api/reminders`)
 
-| 方法 | 路径 | 说明 | 角色 |
-|------|------|------|------|
-| GET | `/api/reminders` | 获取所有逾期提醒 | COURIER, ADMIN |
-| GET | `/api/reminders/unresolved` | 获取未处理的逾期提醒 | COURIER, ADMIN |
-| PUT | `/api/reminders/{id}/resolve` | 标记提醒为已处理 | COURIER, ADMIN |
+| 方法 | 路径 | 说明 | 权限 | 请求体/参数 |
+|------|------|------|------|------------|
+| GET | `/api/reminders` | 获取所有逾期提醒 | COURIER / ADMIN | - |
+| GET | `/api/reminders/unresolved` | 获取未处理的逾期提醒 | COURIER / ADMIN | - |
+| PUT | `/api/reminders/{id}/resolve` | 标记提醒为已处理 | COURIER / ADMIN | `id`（路径参数） |
 
+### 接口统计汇总
+
+| 模块 | 接口数量 | 基础路径 |
+|------|---------|---------|
+| 用户管理 | 6 | `/api/users` |
+| 快递管理 | 12 | `/api/packages` |
+| 取件管理 | 5 | `/api/pickups` |
+| 退件管理 | 3 | `/api/returns` |
+| 异常管理 | 6 | `/api/exceptions` |
+| 统计报表 | 1 | `/api/statistics` |
+| 逾期提醒 | 3 | `/api/reminders` |
+| **总计** | **36** | - |
 ---
 
 ## 功能模块详解
