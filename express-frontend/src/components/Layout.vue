@@ -9,7 +9,7 @@ const userStore = useUserStore();
 const isCollapse = ref(false);
 
 const menuItems = computed(() => {
-  const role = userStore.userRole;
+  const role = userStore.role;
   const menus = [
     {
       path: "/dashboard",
@@ -50,7 +50,7 @@ const menuItems = computed(() => {
     {
       path: "/reminders",
       title: "逾期提醒",
-      icon: "Alarm",
+      icon: "Clock",
       roles: ["ADMIN", "COURIER"],
     },
     {
@@ -102,13 +102,13 @@ const handleMenuSelect = (index) => {
       <el-header class="header">
         <div class="header-left">
           <el-button
-            :icon="isCollapse ? 'Expand' : 'Fold'"
+            :icon="isCollapse ? 'DArrowRight' : 'DArrowLeft'"
             @click="isCollapse = !isCollapse"
             circle
           />
         </div>
         <div class="header-right">
-          <span class="username">{{ userStore.userInfo?.username }}</span>
+          <span class="username">{{ userStore.username }}</span>
           <el-button type="danger" size="small" @click="handleLogout">
             退出
           </el-button>

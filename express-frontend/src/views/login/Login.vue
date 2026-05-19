@@ -1,5 +1,4 @@
 <script setup>
-import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import { ElMessage } from "element-plus";
@@ -7,28 +6,33 @@ import { ElMessage } from "element-plus";
 const router = useRouter();
 const userStore = useUserStore();
 
-const loginForm = ref({
-  username: "",
-  password: "",
-});
+// ========== 测试账号（课程作业专用） ==========
+const testAccounts = [
+  { username: "admin", password: "123456", desc: "管理员" },
+  { username: "courier", password: "123456", desc: "快递员" },
+  { username: "owner", password: "123456", desc: "业主" },
+];
 
-const loading = ref(false);
+// 默认选中第一个测试账号
+const loginForm = {
+  username: testAccounts[0].username,
+  password: testAccounts[0].password,
+};
+
+// 快速选择测试账号
+const selectAccount = (account) => {
+  loginForm.username = account.username;
+  loginForm.password = account.password;
+};
 
 const handleLogin = async () => {
-  if (!loginForm.value.username || !loginForm.value.password) {
-    ElMessage.warning("请输入用户名和密码");
-    return;
-  }
-
-  loading.value = true;
   try {
-    await userStore.login(loginForm.value);
+    await userStore.login(loginForm);
     ElMessage.success("登录成功");
-    router.push("/");
+    router.push("/dashboard");
   } catch (error) {
     console.error("登录失败:", error);
-  } finally {
-    loading.value = false;
+    ElMessage.error("登录失败，请检查用户名密码");
   }
 };
 </script>
@@ -36,45 +40,39 @@ const handleLogin = async () => {
 <template>
   <div class="login-container">
     <div class="login-box">
-      <h2 class="login-title">快递代收管理系统</h2>
-      <el-form
-        :model="loginForm"
-        label-width="80px"
-        @submit.prevent="handleLogin"
-      >
+      <h2>快递代收管理系统</h2>
+
+      <!-- 测试账号快速选择 -->
+      <div class="test-accounts">
+        <p>测试账号（点击快速填充）：</p>
+        <div class="account-list">
+          <div
+            v-for="account in testAccounts"
+            :key="account.username"
+            class="account-item"
+            @click="selectAccount(account)"
+          >
+            <span class="account-desc">{{ account.desc }}：</span>
+            <span class="account-info"
+              >{{ account.username }} / {{ account.password }}</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <el-form :model="loginForm" label-width="80px">
         <el-form-item label="用户名">
-          <el-input
-            v-model="loginForm.username"
-            placeholder="请输入用户名"
-            :disabled="loading"
-          />
+          <el-input v-model="loginForm.username" />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input
-            v-model="loginForm.password"
-            type="password"
-            placeholder="请输入密码"
-            :disabled="loading"
-            @keyup.enter="handleLogin"
-          />
+          <el-input v-model="loginForm.password" type="password" />
         </el-form-item>
         <el-form-item>
-          <el-button
-            type="primary"
-            class="login-btn"
-            :loading="loading"
-            @click="handleLogin"
-          >
+          <el-button type="primary" class="login-btn" @click="handleLogin">
             登录
           </el-button>
         </el-form-item>
       </el-form>
-      <div class="test-accounts">
-        <p>测试账号：</p>
-        <p>管理员: admin / admin123</p>
-        <p>快递员: courier1 / courier123</p>
-        <p>业主: owner1 / owner123</p>
-      </div>
     </div>
   </div>
 </template>
@@ -82,7 +80,7 @@ const handleLogin = async () => {
 <style scoped>
 .login-container {
   width: 100%;
-  height: 100%;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -90,33 +88,62 @@ const handleLogin = async () => {
 }
 
 .login-box {
-  width: 400px;
+  width: 450px;
   padding: 40px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.login-title {
+h2 {
   text-align: center;
   margin-bottom: 30px;
   color: #333;
-  font-size: 24px;
+}
+
+.test-accounts {
+  margin-bottom: 30px;
+  padding: 15px;
+  background: #f5f7fa;
+  border-radius: 6px;
+}
+
+.test-accounts p {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
+.account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.account-item {
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.account-item:hover {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.account-desc {
+  font-weight: 500;
+}
+
+.account-info {
+  color: #666;
+  font-family: monospace;
 }
 
 .login-btn {
   width: 100%;
-}
-
-.test-accounts {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-  font-size: 12px;
-  color: #999;
-}
-
-.test-accounts p {
-  margin: 5px 0;
 }
 </style>

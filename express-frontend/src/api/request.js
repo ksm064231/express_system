@@ -6,50 +6,26 @@ const request = axios.create({
   timeout: 10000,
 });
 
-// 请求拦截器
-request.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
+// ========== 极简请求拦截器 ==========
+// 课程作业简化版：只加token，不做复杂处理
+request.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  // Mock token 不发送到后端
+  if (token && !token.startsWith("mock")) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-// 响应拦截器
+// ========== 极简响应拦截器 ==========
+// 课程作业简化版：直接返回数据，不做复杂的code判断
 request.interceptors.response.use(
   (response) => {
-    const res = response.data;
-    if (res.code !== 200) {
-      ElMessage.error(res.message || "请求失败");
-      return Promise.reject(new Error(res.message || "请求失败"));
-    }
-    return res;
+    return response.data;
   },
   (error) => {
-    if (error.response) {
-      const { status } = error.response;
-      if (status === 401) {
-        ElMessage.error("登录已过期，请重新登录");
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
-      } else if (status === 403) {
-        ElMessage.error("没有权限访问该资源");
-      } else if (status === 404) {
-        ElMessage.error("请求的资源不存在");
-      } else if (status === 500) {
-        ElMessage.error("服务器内部错误");
-      } else {
-        ElMessage.error(error.response.data?.message || "请求失败");
-      }
-    } else {
-      ElMessage.error("网络错误，请检查网络连接");
-    }
+    console.error("请求错误:", error);
+    ElMessage.error(error.response?.data?.message || "请求失败");
     return Promise.reject(error);
   },
 );

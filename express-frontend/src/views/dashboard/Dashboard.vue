@@ -1,5 +1,13 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import {
+  Box,
+  TakeawayBox,
+  RefreshLeft,
+  Clock,
+  Plus,
+  Warning,
+} from "@element-plus/icons-vue";
 import { getDailyStatistics } from "@/api/statistics";
 
 const loading = ref(false);
@@ -76,7 +84,7 @@ onMounted(() => {
         <el-card class="stat-card" :loading="loading">
           <div class="stat-content">
             <div class="stat-icon overdue">
-              <el-icon><Alarm /></el-icon>
+              <el-icon><Clock /></el-icon>
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ statistics.overdueCount }}</div>

@@ -1,43 +1,51 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { useUserStore } from "@/stores/user";
+
+// 静态导入 - 确保组件正常加载
+import Login from "@/views/login/Login.vue";
+import DefaultLayout from "@/layouts/DefaultLayout.vue";
+import Dashboard from "@/views/dashboard/Dashboard.vue";
+import PackageList from "@/views/packages/PackageList.vue";
+import PackageStore from "@/views/packages/PackageStore.vue";
+import PickupOperation from "@/views/pickup/PickupOperation.vue";
+import NotFound from "@/views/NotFound.vue";
 
 const routes = [
   {
     path: "/login",
     name: "Login",
-    component: () => import("@/views/login/Login.vue"),
-    meta: { requiresAuth: false },
+    component: Login,
   },
   {
     path: "/",
     redirect: "/dashboard",
-    component: () => import("@/components/Layout.vue"),
-    meta: { requiresAuth: true },
+    component: DefaultLayout,
     children: [
       {
         path: "dashboard",
         name: "Dashboard",
-        component: () => import("@/views/dashboard/Dashboard.vue"),
-        meta: { title: "数据统计" },
+        component: Dashboard,
       },
       {
         path: "packages",
         name: "PackageList",
-        component: () => import("@/views/packages/PackageList.vue"),
-        meta: { title: "快递管理" },
+        component: PackageList,
       },
       {
         path: "packages/store",
         name: "PackageStore",
-        component: () => import("@/views/packages/PackageStore.vue"),
-        meta: { title: "快递入库" },
+        component: PackageStore,
+      },
+      {
+        path: "pickups",
+        name: "PickupOperation",
+        component: PickupOperation,
       },
     ],
   },
   {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
-    component: () => import("@/views/NotFound.vue"),
+    component: NotFound,
   },
 ];
 
@@ -46,17 +54,26 @@ const router = createRouter({
   routes,
 });
 
-// 路由守卫
+// ========== 极简路由守卫 ==========
+// 课程作业简化版：只检查Token，不做复杂权限验证
 router.beforeEach((to, from, next) => {
-  const userStore = useUserStore();
-  const requiresAuth = to.meta.requiresAuth !== false;
+  const token = localStorage.getItem("token");
 
-  if (requiresAuth && !userStore.isLoggedIn) {
-    next("/login");
-  } else if (to.path === "/login" && userStore.isLoggedIn) {
-    next("/");
-  } else {
+  // 访问登录页：有token跳首页，没token继续
+  if (to.path === "/login") {
+    if (token) {
+      next("/dashboard");
+    } else {
+      next();
+    }
+    return;
+  }
+
+  // 访问其他页面：有token继续，没token跳登录
+  if (token) {
     next();
+  } else {
+    next("/login");
   }
 });
 

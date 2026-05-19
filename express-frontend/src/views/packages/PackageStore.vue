@@ -13,9 +13,24 @@ const packageForm = ref({
   courierCompany: "",
   recipientName: "",
   recipientPhone: "",
-  storageLocation: "",
+  roomNumber: "",
+  shelfNumber: "",
   remarks: "",
 });
+
+const generatePickupCode = () => {
+  const timestamp = Date.now().toString().slice(-4);
+  const random = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, "0");
+  return timestamp + random;
+};
+
+const autoFill = async () => {
+  if (packageForm.value.trackingNumber.length >= 5) {
+    packageForm.value.pickupCode = generatePickupCode();
+  }
+};
 
 const handleSubmit = async () => {
   if (!packageForm.value.trackingNumber || !packageForm.value.recipientPhone) {
@@ -90,10 +105,18 @@ const handleCancel = () => {
           />
         </el-form-item>
 
-        <el-form-item label="存放位置">
+        <el-form-item label="房号">
           <el-input
-            v-model="packageForm.storageLocation"
-            placeholder="请输入存放位置（如货架编号）"
+            v-model="packageForm.roomNumber"
+            placeholder="请输入房号（如：1栋101）"
+            :disabled="loading"
+          />
+        </el-form-item>
+
+        <el-form-item label="货架号">
+          <el-input
+            v-model="packageForm.shelfNumber"
+            placeholder="请输入货架编号"
             :disabled="loading"
           />
         </el-form-item>
