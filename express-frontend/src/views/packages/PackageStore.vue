@@ -1,12 +1,14 @@
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
-import { storePackage } from "@/api/package";
+import { storePackage, updatePackage, getPackage } from "@/api/package";
 import { COURIER_COMPANIES } from "@/utils/constants";
 
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
+const isEditMode = ref(false);
 
 const packageForm = ref({
   trackingNumber: "",
@@ -15,7 +17,8 @@ const packageForm = ref({
   recipientPhone: "",
   roomNumber: "",
   shelfNumber: "",
-  remarks: "",
+  pickupCode: "",
+  notes: "",
 });
 
 const generatePickupCode = () => {
@@ -26,25 +29,86 @@ const generatePickupCode = () => {
   return timestamp + random;
 };
 
+// ========== 手机号验证 ==========
+const phoneError = ref("");
+// 中国大陆手机号正则：1开头，第二位3-9，后面9位数字
+const phoneRegex = /^1[3-9]\d{9}$/;
+
+const validatePhone = () => {
+  const phone = packageForm.value.recipientPhone;
+
+  if (!phone) {
+    phoneError.value = "请输入手机号";
+    return false;
+  }
+
+  if (!phoneRegex.test(phone)) {
+    phoneError.value = "请输入正确的11位手机号";
+    return false;
+  }
+
+  phoneError.value = "";
+  return true;
+};
+
+// 自动清除空格
+const formatPhone = () => {
+  packageForm.value.recipientPhone = packageForm.value.recipientPhone
+    .replace(/\s/g, "")
+    .trim();
+  if (packageForm.value.recipientPhone) {
+    validatePhone();
+  } else {
+    phoneError.value = "";
+  }
+};
+
 const autoFill = async () => {
-  if (packageForm.value.trackingNumber.length >= 5) {
+  if (packageForm.value.trackingNumber.length >= 5 && !isEditMode.value) {
     packageForm.value.pickupCode = generatePickupCode();
   }
 };
 
+const loadPackageData = async () => {
+  const packageId = route.params.id;
+  if (packageId) {
+    isEditMode.value = true;
+    loading.value = true;
+    try {
+      const res = await getPackage(packageId);
+      Object.assign(packageForm.value, res);
+    } catch (error) {
+      ElMessage.error("加载快递信息失败");
+    } finally {
+      loading.value = false;
+    }
+  }
+};
+
 const handleSubmit = async () => {
-  if (!packageForm.value.trackingNumber || !packageForm.value.recipientPhone) {
-    ElMessage.warning("请填写必填项");
+  if (!packageForm.value.trackingNumber) {
+    ElMessage.warning("请输入运单号");
+    return;
+  }
+
+  // 验证手机号格式
+  if (!validatePhone()) {
+    ElMessage.warning(phoneError.value);
     return;
   }
 
   loading.value = true;
   try {
-    await storePackage(packageForm.value);
-    ElMessage.success("入库成功");
+    if (isEditMode.value) {
+      await updatePackage(route.params.id, packageForm.value);
+      ElMessage.success("更新成功");
+    } else {
+      await storePackage(packageForm.value);
+      ElMessage.success("入库成功");
+    }
     router.push("/packages");
   } catch (error) {
-    console.error("入库失败:", error);
+    // 错误已在拦截器中处理
   } finally {
     loading.value = false;
   }
@@ -53,11 +117,15 @@ const handleSubmit = async () => {
 const handleCancel = () => {
   router.back();
 };
+
+onMounted(() => {
+  loadPackageData();
+});
 </script>
 
 <template>
   <div class="package-store">
-    <h2 class="page-title">快递入库</h2>
+    <h2 class="page-title">{{ isEditMode ? "编辑快递" : "快递入库" }}</h2>
 
     <el-card>
       <el-form
@@ -69,7 +137,8 @@ const handleCancel = () => {
           <el-input
             v-model="packageForm.trackingNumber"
             placeholder="请输入快递运单号"
-            :disabled="loading"
+            :disabled="loading || isEditMode"
+            @blur="autoFill"
           />
         </el-form-item>
 
@@ -97,11 +166,15 @@ const handleCancel = () => {
           />
         </el-form-item>
 
-        <el-form-item label="手机号" required>
+        <el-form-item label="手机号" required :error="phoneError">
           <el-input
             v-model="packageForm.recipientPhone"
-            placeholder="请输入收件人手机号"
+            placeholder="请输入11位手机号"
             :disabled="loading"
+            maxlength="11"
+            show-word-limit
+            @input="formatPhone"
+            @blur="validatePhone"
           />
         </el-form-item>
 
@@ -123,7 +196,7 @@ const handleCancel = () => {
 
         <el-form-item label="备注">
           <el-input
-            v-model="packageForm.remarks"
+            v-model="packageForm.notes"
             type="textarea"
             :rows="3"
             placeholder="请输入备注信息"
@@ -133,7 +206,7 @@ const handleCancel = () => {
 
         <el-form-item>
           <el-button type="primary" :loading="loading" @click="handleSubmit">
-            确认入库
+            {{ isEditMode ? "确认更新" : "确认入库" }}
           </el-button>
           <el-button @click="handleCancel">取消</el-button>
         </el-form-item>

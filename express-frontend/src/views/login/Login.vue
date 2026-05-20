@@ -31,8 +31,7 @@ const handleLogin = async () => {
     ElMessage.success("登录成功");
     router.push("/dashboard");
   } catch (error) {
-    console.error("登录失败:", error);
-    ElMessage.error("登录失败，请检查用户名密码");
+    // 错误已在 userStore 和拦截器中处理
   }
 };
 </script>

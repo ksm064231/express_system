@@ -17,15 +17,25 @@ request.interceptors.request.use((config) => {
   return config;
 });
 
-// ========== 极简响应拦截器 ==========
-// 课程作业简化版：直接返回数据，不做复杂的code判断
+// ========== 响应拦截器 ==========
+// 适配后端 ApiResponse 格式：{ code, message, data }
 request.interceptors.response.use(
   (response) => {
-    return response.data;
+    const res = response.data;
+    // 如果 code 不是 200，说明后端返回错误
+    if (res.code !== 200) {
+      ElMessage.error(res.message || "请求失败");
+      return Promise.reject(new Error(res.message || "请求失败"));
+    }
+    // 返回实际的数据部分
+    return res.data;
   },
   (error) => {
-    console.error("请求错误:", error);
-    ElMessage.error(error.response?.data?.message || "请求失败");
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "请求失败，请稍后重试";
+    ElMessage.error(errorMessage);
     return Promise.reject(error);
   },
 );

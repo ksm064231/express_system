@@ -31,3 +31,6 @@ export const updatePackage = (id, data) => request.put(`/packages/${id}`, data);
 
 // 删除快递
 export const deletePackage = (id) => request.delete(`/packages/${id}`);
+
+// 获取单个快递
+export const getPackage = (id) => request.get(`/packages/${id}`);

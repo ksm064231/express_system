@@ -31,9 +31,9 @@ const loadPackageList = async () => {
     } else {
       res = await getPackageList();
     }
-    packageList.value = res.data || [];
+    packageList.value = res || [];
   } catch (error) {
-    console.error("获取快递列表失败:", error);
+    ElMessage.error("获取快递列表失败");
   } finally {
     loading.value = false;
   }
@@ -61,7 +61,7 @@ const handleDelete = async (row) => {
     loadPackageList();
   } catch (error) {
     if (error !== "cancel") {
-      console.error("删除失败:", error);
+      ElMessage.error("删除失败");
     }
   }
 };

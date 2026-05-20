@@ -20,3 +20,10 @@ export const handleException = (id, data) =>
 
 // 关闭异常（仅管理员）
 export const closeException = (id) => request.put(`/exceptions/${id}/close`);
+
+// 解决异常（兼容resolveException命名）
+export const resolveException = (id, data) =>
+  request.put(`/exceptions/${id}/handle`, data);
+
+// 删除异常
+export const deleteException = (id) => request.delete(`/exceptions/${id}`);

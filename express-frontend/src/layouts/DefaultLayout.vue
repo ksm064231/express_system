@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import {
@@ -17,6 +17,8 @@ const route = useRoute();
 const userStore = useUserStore();
 
 const isCollapse = ref(false);
+
+const activeIndex = ref(route.path);
 
 const menuItems = [
   {
@@ -41,11 +43,22 @@ const menuItems = [
   },
 ];
 
-const activeMenu = computed(() => route.path);
-
-const handleSelect = (key) => {
-  router.push(key);
+const handleMenuSelect = (index) => {
+  if (index !== route.path) {
+    // 先更新激活状态，再跳转
+    activeIndex.value = index;
+    router.push(index);
+  }
 };
+
+// 监听路由变化，更新激活的菜单项
+watch(
+  () => route.path,
+  (newPath) => {
+    activeIndex.value = newPath;
+  },
+  { immediate: true },
+);
 
 const handleLogout = () => {
   userStore.logout();
@@ -62,13 +75,14 @@ const handleLogout = () => {
           <h2 v-else>驿站</h2>
         </div>
         <el-menu
-          :default-active="activeMenu"
+          :default-active="activeIndex"
           :collapse="isCollapse"
           background-color="#304156"
           text-color="#bfcbd9"
           active-text-color="#409eff"
           class="sidebar-menu"
-          @select="handleSelect"
+          :key="activeIndex"
+          @select="handleMenuSelect"
         >
           <el-menu-item
             v-for="item in menuItems"

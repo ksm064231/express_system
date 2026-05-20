@@ -1,6 +1,6 @@
 <script setup>
-import { ref, reactive } from "vue";
-import { ElMessage, ElTabs, ElTabPane } from "element-plus";
+import { ref, reactive, onMounted } from "vue";
+import { ElMessage } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
 import { pickupByCode, getPickupRecords } from "@/api/pickup";
 import { getPackageByTracking } from "@/api/package";
@@ -12,7 +12,7 @@ const activeTab = ref("byCode");
 const codeForm = reactive({
   trackingNumber: "",
   pickupCode: "",
-  pickerName: "",
+  pickupPersonName: "",
 });
 
 // 管理员取件表单
@@ -20,8 +20,8 @@ const adminForm = reactive({
   trackingNumber: "",
   packageInfo: null,
   verificationMethod: "phone",
-  pickerName: "",
-  pickerPhone: "",
+  pickupPersonName: "",
+  pickupPersonPhone: "",
 });
 
 // 取件记录列表
@@ -38,10 +38,10 @@ const searchPackage = async () => {
   try {
     loading.value = true;
     const res = await getPackageByTracking(adminForm.trackingNumber);
-    if (res.data && res.data.status === PACKAGE_STATUS.STORED.value) {
-      adminForm.packageInfo = res.data;
+    if (res && res.status === PACKAGE_STATUS.STORED.value) {
+      adminForm.packageInfo = res;
       ElMessage.success("找到快递信息");
-    } else if (res.data) {
+    } else if (res) {
       ElMessage.warning("该快递状态不是" + PACKAGE_STATUS.STORED.label);
     } else {
       ElMessage.warning("未找到该快递");
@@ -61,14 +61,17 @@ const handlePickupByCode = async () => {
   }
   try {
     submitting.value = true;
+    // 先查询快递获取ID（后端DTO验证需要packageId）
+    const pkg = await getPackageByTracking(codeForm.trackingNumber);
     await pickupByCode(codeForm.trackingNumber, codeForm.pickupCode, {
-      pickerName: codeForm.pickerName,
+      packageId: pkg.id,
+      pickupPersonName: codeForm.pickupPersonName,
     });
     ElMessage.success("取件成功");
     // 重置表单
     codeForm.trackingNumber = "";
     codeForm.pickupCode = "";
-    codeForm.pickerName = "";
+    codeForm.pickupPersonName = "";
     // 刷新记录
     loadPickupRecords();
   } catch (error) {
@@ -84,7 +87,7 @@ const handleAdminPickup = async () => {
     ElMessage.warning("请先搜索并选择快递");
     return;
   }
-  if (!adminForm.pickerName || !adminForm.pickerPhone) {
+  if (!adminForm.pickupPersonName || !adminForm.pickupPersonPhone) {
     ElMessage.warning("请填写取件人信息");
     return;
   }
@@ -94,8 +97,9 @@ const handleAdminPickup = async () => {
       adminForm.trackingNumber,
       adminForm.packageInfo.pickupCode,
       {
-        pickerName: adminForm.pickerName,
-        pickerPhone: adminForm.pickerPhone,
+        packageId: adminForm.packageInfo.id,
+        pickupPersonName: adminForm.pickupPersonName,
+        pickupPersonPhone: adminForm.pickupPersonPhone,
         verificationMethod: adminForm.verificationMethod,
       },
     );
@@ -103,8 +107,8 @@ const handleAdminPickup = async () => {
     // 重置表单
     adminForm.trackingNumber = "";
     adminForm.packageInfo = null;
-    adminForm.pickerName = "";
-    adminForm.pickerPhone = "";
+    adminForm.pickupPersonName = "";
+    adminForm.pickupPersonPhone = "";
     // 刷新记录
     loadPickupRecords();
   } catch (error) {
@@ -118,7 +122,7 @@ const handleAdminPickup = async () => {
 const loadPickupRecords = async () => {
   try {
     const res = await getPickupRecords();
-    pickupRecords.value = res.data || [];
+    pickupRecords.value = res || [];
   } catch (error) {
     ElMessage.error("加载取件记录失败");
   }
@@ -135,8 +139,10 @@ const getStatusLabel = (status) => {
   return statusConfig?.label || status;
 };
 
-// 初始化
-loadPickupRecords();
+// 组件挂载时加载数据
+onMounted(() => {
+  loadPickupRecords();
+});
 </script>
 
 <template>
@@ -169,7 +175,7 @@ loadPickupRecords();
             </el-form-item>
             <el-form-item label="取件人姓名">
               <el-input
-                v-model="codeForm.pickerName"
+                v-model="codeForm.pickupPersonName"
                 placeholder="请输入取件人姓名"
                 clearable
               />
@@ -186,7 +192,7 @@ loadPickupRecords();
                 @click="
                   codeForm.trackingNumber = '';
                   codeForm.pickupCode = '';
-                  codeForm.pickerName = '';
+                  codeForm.pickupPersonName = '';
                 "
               >
                 重置
@@ -247,14 +253,14 @@ loadPickupRecords();
               </el-form-item>
               <el-form-item label="取件人姓名">
                 <el-input
-                  v-model="adminForm.pickerName"
+                  v-model="adminForm.pickupPersonName"
                   placeholder="请输入取件人姓名"
                   clearable
                 />
               </el-form-item>
               <el-form-item label="取件人电话">
                 <el-input
-                  v-model="adminForm.pickerPhone"
+                  v-model="adminForm.pickupPersonPhone"
                   placeholder="请输入取件人电话"
                   clearable
                 />
@@ -271,8 +277,8 @@ loadPickupRecords();
                   @click="
                     adminForm.trackingNumber = '';
                     adminForm.packageInfo = null;
-                    adminForm.pickerName = '';
-                    adminForm.pickerPhone = '';
+                    adminForm.pickupPersonName = '';
+                    adminForm.pickupPersonPhone = '';
                   "
                 >
                   重置
@@ -296,33 +302,30 @@ loadPickupRecords();
       </template>
 
       <el-table :data="pickupRecords" border stripe>
-        <el-table-column
-          prop="package.trackingNumber"
-          label="运单号"
-          width="150"
-        />
-        <el-table-column
-          prop="package.recipientName"
-          label="收件人"
-          width="120"
-        />
-        <el-table-column
-          prop="package.recipientPhone"
-          label="收件电话"
-          width="130"
-        />
-        <el-table-column prop="pickerName" label="取件人" width="120" />
-        <el-table-column prop="pickerPhone" label="取件电话" width="130" />
-        <el-table-column prop="pickupTime" label="取件时间" width="160">
+        <el-table-column prop="id" label="记录ID" width="80" />
+        <el-table-column prop="packageId" label="快递ID" width="80" />
+        <el-table-column prop="pickupPersonName" label="取件人" width="120" />
+        <el-table-column label="取件电话" width="140">
           <template #default="{ row }">
-            {{ new Date(row.pickupTime).toLocaleString() }}
+            {{ row.pickupPersonPhone || "-" }}
           </template>
         </el-table-column>
-        <el-table-column prop="package.status" label="状态" width="100">
+        <el-table-column
+          prop="verificationMethod"
+          label="验证方式"
+          width="100"
+        />
+        <el-table-column prop="signature" label="取件码/签名" width="120" />
+        <el-table-column label="取件时间" width="180">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.package.status)">
-              {{ getStatusLabel(row.package.status) }}
-            </el-tag>
+            {{
+              row.pickupTime ? new Date(row.pickupTime).toLocaleString() : "-"
+            }}
+          </template>
+        </el-table-column>
+        <el-table-column label="备注" width="150">
+          <template #default="{ row }">
+            {{ row.notes || "-" }}
           </template>
         </el-table-column>
       </el-table>

@@ -12,10 +12,12 @@ import { getDailyStatistics } from "@/api/statistics";
 
 const loading = ref(false);
 const statistics = ref({
-  storedCount: 0,
-  pickedUpCount: 0,
-  returnedCount: 0,
+  dailyStoredCount: 0,
+  dailyPickupCount: 0,
+  dailyReturnCount: 0,
   overdueCount: 0,
+  currentStoredCount: 0,
+  pendingExceptionCount: 0,
 });
 
 const loadStatistics = async () => {
@@ -23,9 +25,9 @@ const loadStatistics = async () => {
   try {
     const today = new Date().toISOString().split("T")[0];
     const res = await getDailyStatistics(today);
-    statistics.value = res.data || statistics.value;
+    statistics.value = res || statistics.value;
   } catch (error) {
-    console.error("获取统计数据失败:", error);
+    ElMessage.error("获取统计数据失败");
   } finally {
     loading.value = false;
   }
@@ -48,7 +50,9 @@ onMounted(() => {
               <el-icon><Box /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.storedCount }}</div>
+              <div class="stat-value">
+                {{ statistics.dailyStoredCount || 0 }}
+              </div>
               <div class="stat-label">今日入库</div>
             </div>
           </div>
@@ -61,7 +65,9 @@ onMounted(() => {
               <el-icon><TakeawayBox /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.pickedUpCount }}</div>
+              <div class="stat-value">
+                {{ statistics.dailyPickupCount || 0 }}
+              </div>
               <div class="stat-label">今日取件</div>
             </div>
           </div>
@@ -74,7 +80,9 @@ onMounted(() => {
               <el-icon><RefreshLeft /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.returnedCount }}</div>
+              <div class="stat-value">
+                {{ statistics.dailyReturnCount || 0 }}
+              </div>
               <div class="stat-label">今日退件</div>
             </div>
           </div>
@@ -87,7 +95,7 @@ onMounted(() => {
               <el-icon><Clock /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.overdueCount }}</div>
+              <div class="stat-value">{{ statistics.overdueCount || 0 }}</div>
               <div class="stat-label">逾期未取</div>
             </div>
           </div>
